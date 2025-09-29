@@ -13,14 +13,26 @@
     <style>
         html, body { height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; }
         #map { flex-grow: 1; width: 100%; }
-        .legend {
-            line-height: 1.5; color: #333; padding: 8px 12px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 5px;
+        /* CSS untuk legenda di dalam control layer */
+        .leaflet-control-layers-overlays .legend-in-control {
+            margin-top: 5px;
+            margin-left: 25px;
         }
-        .legend .title { font-size: 16px; margin-bottom: 8px; font-weight: bold; text-align: left; }
-        .legend .legend-item { display: flex; align-items: center; margin-bottom: 4px; }
-        .legend i { width: 18px; height: 18px; margin-right: 8px; opacity: 0.9; border: 1px solid #555; }
+        .leaflet-control-layers-overlays .legend-in-control .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+        .leaflet-control-layers-overlays .legend-in-control i {
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            opacity: 0.8;
+        }
+        .leaflet-control-layers-overlays .legend-in-control span {
+            font-size: 12px;
+            font-weight: normal;
+        }
     </style>
 </head>
 <body>
@@ -75,9 +87,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Nama: Idhea Fasih Pratiwi</p>
-                    <p>NIM: 25/569123/SV/27605</p>
-                    <p>Kelas: PGWeb A</p>
+                    <p>Peta web interaktif ini menampilkan data geografis wilayah Kabupaten Flores Timur.</p>
+                    <hr>
+                    <p><strong>Teknologi yang digunakan:</strong></p>
+                    <ul><li>Leaflet.js</li><li>Bootstrap 5</li></ul>
+                    <hr>
+                    <p class="text-center text-muted small">Dibuat dengan bantuan Gemini</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Mengerti</button>
@@ -138,37 +153,32 @@
                 const sungaiLayer = L.geoJSON(sungaiData, { style: { color: "#0000FF", weight: 1.5, opacity: 0.9 }, pane: 'sungaiPane' });
                 const toponimiLayer = L.geoJSON(toponimiData, { pane: 'toponimiPane', onEachFeature: (f, l) => { if (f.properties && f.properties.NAMOBJ) l.bindPopup(f.properties.NAMOBJ); } });
 
+                let pendudukLegendHtml = '<div class="legend-in-control">';
+                const grades = [0, 15000, 30000];
+                grades.forEach((g, i) => {
+                    pendudukLegendHtml += `<div class="legend-item"><i style="background:${getKecamatanColor(g + 1)}; border: 1px solid #777;"></i> <span>${g.toLocaleString('id-ID')}${grades[i+1] ? '&ndash;'+grades[i+1].toLocaleString('id-ID') : '+'}</span></div>`;
+                });
+                pendudukLegendHtml += '</div>';
+
+                let jalanLegendHtml = '<div class="legend-in-control">';
+                const jalanTypes = {'Jalan Provinsi': 4, 'Jalan Kabupaten': 3, 'Jalan Lain': 2};
+                for (const type in jalanTypes) {
+                    jalanLegendHtml += `<div class="legend-item"><i style="background: #FF0000; height: ${jalanTypes[type]}px; width: 15px; border: none; margin-top: 4px;"></i> <span>${type}</span></div>`;
+                }
+                jalanLegendHtml += '</div>';
+
+                let sungaiLegendHtml = '<div class="legend-in-control"><div class="legend-item"><i style="background: #0000FF; height: 2px; width: 15px; border: none; margin-top: 4px;"></i> <span>Sungai</span></div></div>';
+
                 const overlayMaps = {
                     "Toponimi": toponimiLayer,
-                    "Jalan": jalanLayer,
-                    "Sungai": sungaiLayer,
-                    "Batas Kecamatan": kecamatanLayer
+                    ["Jalan" + jalanLegendHtml]: jalanLayer,
+                    ["Sungai" + sungaiLegendHtml]: sungaiLayer,
+                    ["Batas Kecamatan" + pendudukLegendHtml]: kecamatanLayer
                 };
 
                 [kecamatanLayer, jalanLayer, sungaiLayer, toponimiLayer].forEach(l => l.addTo(map));
 
                 L.control.layers(baseMaps, overlayMaps).addTo(map);
-
-                const legend = L.control({ position: 'bottomright' });
-                legend.onAdd = function (map) {
-                    const div = L.DomUtil.create('div', 'info legend');
-                    let html = '<div class="title">Legenda</div>';
-                    html += '<strong style="font-size: 14px;">Jumlah Penduduk</strong>';
-                    const grades = [0, 15000, 30000];
-                    grades.forEach((g, i) => {
-                        html += `<div class="legend-item"><i style="background:${getKecamatanColor(g + 1)}"></i> <span>${g.toLocaleString('id-ID')}${grades[i+1] ? '&ndash;'+grades[i+1].toLocaleString('id-ID') : '+'}</span></div>`;
-                    });
-                    html += '<strong style="font-size: 14px; display: block; margin-top: 10px;">Jenis Jalan</strong>';
-                    const jalanTypes = {'Jalan Provinsi': 4, 'Jalan Kabupaten': 3, 'Jalan Lain': 2};
-                    for (const type in jalanTypes) {
-                        html += `<div class="legend-item"><i style="background: #FF0000; height: ${jalanTypes[type]}px; width: 20px; border: none; margin-top: ${(18 - jalanTypes[type]) / 2}px;"></i> <span>${type}</span></div>`;
-                    }
-                    html += '<strong style="font-size: 14px; display: block; margin-top: 10px;">Lainnya</strong>';
-                    html += `<div class="legend-item"><i style="background: #0000FF; height: 2px; width: 20px; border: none; margin-top: 8px;"></i> <span>Sungai</span></div>`;
-                    div.innerHTML = html;
-                    return div;
-                };
-                legend.addTo(map);
 
                 const datalist = document.getElementById('kecamatanList');
                 kecamatanData.features.forEach(f => { datalist.innerHTML += `<option value="${f.properties.WADMKC}"></option>`; });
