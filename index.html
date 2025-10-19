@@ -87,12 +87,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Peta web interaktif ini menampilkan data geografis wilayah Kabupaten Flores Timur.</p>
-                    <hr>
-                    <p><strong>Teknologi yang digunakan:</strong></p>
-                    <ul><li>Leaflet.js</li><li>Bootstrap 5</li></ul>
-                    <hr>
-                    <p class="text-center text-muted small">Dibuat dengan bantuan Gemini</p>
+                    <p>Nama: Idhea Fasih Pratiwi</p>
+                    <p>NIM: 25/569123/SV/27605</p>
+                    <p>Kelas: PGWeb A</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Mengerti</button>
@@ -151,7 +148,24 @@
                 });
                 const jalanLayer = L.geoJSON(jalanData, { style: styleJalan, pane: 'jalanPane' });
                 const sungaiLayer = L.geoJSON(sungaiData, { style: { color: "#0000FF", weight: 1.5, opacity: 0.9 }, pane: 'sungaiPane' });
-                const toponimiLayer = L.geoJSON(toponimiData, { pane: 'toponimiPane', onEachFeature: (f, l) => { if (f.properties && f.properties.NAMOBJ) l.bindPopup(f.properties.NAMOBJ); } });
+                const toponimiLayer = L.geoJSON(toponimiData, {
+                    pane: 'toponimiPane',
+                    pointToLayer: function (feature, latlng) {
+                        return L.circleMarker(latlng, {
+                            radius: 8,
+                            fillColor: "#ff7800",
+                            color: "#000",
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                    },
+                    onEachFeature: function (feature, layer) {
+                        if (feature.properties && feature.properties.NAMOBJ) {
+                            layer.bindPopup(feature.properties.NAMOBJ);
+                        }
+                    }
+                });
 
                 let pendudukLegendHtml = '<div class="legend-in-control">';
                 const grades = [0, 15000, 30000];
